@@ -1,0 +1,97 @@
+IoT-Based-Smart-Patient-Monitoring-System
+
+This project is an ESP32-based IoT simulation using the Blynk platform for smart patient health monitoring. The system simulates temperature, humidity, and device control data and sends it to the Blynk cloud through APIs for real-time monitoring and visualization using a mobile application.
+#define BLYNK_TEMPLATE_ID "TMPL4_w6xJNda"
+#define BLYNK_TEMPLATE_NAME "ICU Simulation"
+#define BLYNK_AUTH_TOKEN "Jn_ufcCfdqXbiX00_FN6ES5k8B0aPR1o"
+
+#define BLYNK_PRINT Serial
+
+#include <WiFi.h>
+#include <BlynkSimpleEsp32.h>
+
+char ssid[] = "Uppi";
+char pass[] = "0987654321";
+
+BlynkTimer timer;
+
+// ---------------- ICU VARIABLES ----------------
+float bodyTemp;
+float roomTemp;
+float humidity;
+int ecgValue;
+int heartRate;
+int spo2;
+float movement;
+
+// ---------------- RANDOM ICU DATA ----------------
+void generateICUData()
+{
+
+  bodyTemp  = 36.0 + (random(0, 100) / 10.0);   // 36.0 - 46.0
+  roomTemp  = 20.0 + (random(0, 100) / 10.0);   // 20 - 30
+  humidity  = random(300, 800) / 10.0;          // 30 - 80%
+
+  ecgValue  = random(500, 900);
+  heartRate = random(60, 120);
+  spo2      = random(90, 100);
+  movement  = random(0, 100) / 10.0;
+
+  // ---------------- SEND TO BLYNK ----------------
+  Blynk.virtualWrite(V0, bodyTemp);
+  Blynk.virtualWrite(V1, roomTemp);
+  Blynk.virtualWrite(V2, humidity);
+  Blynk.virtualWrite(V3, ecgValue);
+  Blynk.virtualWrite(V4, heartRate);
+  Blynk.virtualWrite(V5, spo2);
+  Blynk.virtualWrite(V6, movement);
+
+  // ---------------- DEBUG ----------------
+  Serial.println("---- ICU LIVE DATA ----");
+  Serial.println(bodyTemp);
+  Serial.println(roomTemp);
+  Serial.println(humidity);
+  Serial.println(ecgValue);
+  Serial.println(heartRate);
+  Serial.println(spo2);
+  Serial.println(movement);
+  Serial.println("----------------------");
+}
+
+// ---------------- WIFI ----------------
+void connectWiFi()
+{
+  WiFi.begin(ssid, pass);
+
+  Serial.print("Connecting WiFi");
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("\nWiFi Connected");
+  Serial.println(WiFi.localIP());
+}
+
+// ---------------- SETUP ----------------
+void setup()
+{
+  Serial.begin(115200);
+
+  connectWiFi();
+
+  Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
+
+  randomSeed(esp_random());
+
+  // IMPORTANT: every 1 second update ALL sensors
+  timer.setInterval(1000L, generateICUData);
+}
+
+// ---------------- LOOP ----------------
+void loop()
+{
+  Blynk.run();
+  timer.run();
+}
